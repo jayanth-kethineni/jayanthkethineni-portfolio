@@ -1,0 +1,74 @@
+import { CaseStudyLayout } from "@/components/CaseStudyLayout";
+
+export const metadata = {
+  title: "Real-Time Transaction Processing System",
+  description: "A deep dive into building a high-throughput payment processing system with strong consistency and sub-50ms p99 latency."
+}
+
+export default ({ children }) => <CaseStudyLayout metadata={metadata}>{children}</CaseStudyLayout>;
+
+## Problem
+
+To build a payment processing system that handles high-throughput transactions with strong consistency guarantees and sub-50ms latency requirements.
+
+## Constraints & SLOs
+
+- **Throughput:** 1,000+ transactions per second (TPS)
+- **Latency:** p99 latency of <50ms for the core transaction flow
+- **Consistency:** Strong consistency for all financial operations. No double-spends, no lost updates.
+- **Reliability:** The system must be resilient to network failures, database outages, and other common production issues.
+
+## Architecture
+
+The system is designed as a set of microservices communicating via Kafka. The core services are:
+
+- **Transaction Service:** The entry point for all transactions. Responsible for validation, idempotency checks, and orchestrating the transaction flow.
+- **Ledger Service:** The source of truth for all account balances. It maintains an immutable, append-only ledger of all transactions.
+- **Outbox Service:** A background service that polls the outbox table and publishes events to Kafka, ensuring at-least-once delivery.
+
+![Architecture Diagram](https://via.placeholder.com/800x400.png?text=Architecture+Diagram)
+
+## Data Model
+
+The core data model consists of:
+
+- **Accounts:** Stores the current balance for each user.
+- **Transactions:** An immutable log of all attempted transactions, including their status (pending, completed, failed).
+- **Ledger Entries:** An append-only log of all balance changes. Each transaction will have at least two ledger entries (a debit from one account and a credit to another).
+- **Outbox:** A table where events are stored before being published to Kafka.
+
+![Data Model](https://via.placeholder.com/800x300.png?text=Data+Model)
+
+## Key Design Choices & Tradeoffs
+
+- **Idempotency Keys:** We use a client-provided idempotency key to prevent duplicate transactions. The key is stored in Redis with a short TTL. This adds a small amount of latency but prevents costly duplicate processing.
+- **Outbox Pattern:** To ensure that we don't lose events if our service crashes after a database commit but before publishing to Kafka, we use the outbox pattern. This adds a small amount of latency to event delivery but guarantees at-least-once delivery.
+- **Pessimistic Locking:** To prevent race conditions when updating account balances, we use pessimistic locking (`SELECT ... FOR UPDATE`) at the database level. This is simpler to implement than optimistic locking and is acceptable for our latency requirements.
+
+## Failure Modes & Mitigations
+
+- **Transaction Service Crash:** If the transaction service crashes, the client can safely retry the request with the same idempotency key.
+- **Ledger Service Crash:** The ledger service is designed to be idempotent, so it can be safely restarted.
+- **Kafka Unavailability:** If Kafka is unavailable, the Outbox Service will continue to retry publishing events until it succeeds.
+- **Database Unavailability:** If the database is unavailable, all services will fail health checks and be taken out of service by the load balancer.
+
+## Observability
+
+- **Metrics:** We export a wide range of metrics to Prometheus, including transaction throughput, latency, error rates, and queue depths.
+- **Logging:** We use structured logging (JSON) to make our logs easily searchable and parsable.
+- **Tracing:** We use OpenTelemetry to trace requests as they flow through our system, allowing us to easily identify bottlenecks and sources of error.
+
+## Results
+
+- **1K+ TPS sustained throughput**
+- **Sub-50ms p99 latency**
+- **Idempotency via unique keys**
+- **Outbox pattern for event consistency**
+- **Immutable audit ledger**
+
+## Run locally in 60 seconds
+
+```bash
+docker-compose up -d
+./mvnw spring-boot:run
+```

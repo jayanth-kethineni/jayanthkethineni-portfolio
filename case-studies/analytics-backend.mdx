@@ -1,0 +1,73 @@
+'''import { CaseStudyLayout } from "@/components/CaseStudyLayout";
+
+export const metadata = {
+  title: "Scalable Analytics & Reporting Backend",
+  description: "A deep dive into building a scalable analytics and reporting backend with aggressive caching and sub-500ms query performance."
+}
+
+export default ({ children }) => <CaseStudyLayout metadata={metadata}>{children}</CaseStudyLayout>;
+
+## Problem
+
+To design a reporting system that serves complex analytical queries with aggressive caching strategies while maintaining data freshness.
+
+## Constraints & SLOs
+
+- **Uncached Query Performance:** p95 latency of <500ms for complex analytical queries.
+- **Cached Query Performance:** p99 latency of <20ms for cached responses.
+- **Data Freshness:** Cached data should be no more than 5 minutes stale.
+- **Scalability:** The system must be able to handle a growing number of tenants and a growing volume of data without a linear increase in infrastructure costs.
+
+## Architecture
+
+The system is composed of the following services:
+
+- **API Service:** The entry point for all reporting queries. It is responsible for authentication, authorization, and query validation.
+- **Query Service:** This service is responsible for executing the analytical queries against the database. It includes a caching layer to store the results of frequently executed queries.
+- **Job Service:** A background service that is responsible for pre-computing the results of common queries and for refreshing the cache.
+
+![Architecture Diagram](https://via.placeholder.com/800x400.png?text=Architecture+Diagram)
+
+## Data Model
+
+The data model is optimized for analytical queries. It includes:
+
+- **Fact Tables:** Large tables that store the raw event data.
+- **Dimension Tables:** Smaller tables that store metadata about the events (e.g., user information, product information).
+- **Aggregate Tables:** Pre-computed summary tables that are used to speed up common queries.
+
+![Data Model](https://via.placeholder.com/800x300.png?text=Data+Model)
+
+## Key Design Choices & Tradeoffs
+
+- **Cursor-based Pagination:** To efficiently paginate through large result sets, we use cursor-based pagination instead of traditional offset-based pagination. This avoids the performance penalty of large offsets in the database.
+- **Materialized Views:** For our most common and expensive queries, we use materialized views to pre-compute the results. This significantly improves query performance, but at the cost of data freshness.
+- **Cache TTL and Eviction:** We use a combination of time-to-live (TTL) and least-recently-used (LRU) eviction to manage our cache. This ensures that we are not serving stale data and that we are making efficient use of our cache memory.
+
+## Failure Modes & Mitigations
+
+- **Query Service Overload:** If the query service is overloaded with requests, we can scale it horizontally. We also use a circuit breaker to prevent a single failing query from taking down the entire service.
+- **Stale Cache:** To mitigate the risk of serving stale data, we have a monitoring system that alerts us if the cache is not being refreshed as expected.
+- **Database Overload:** If the database is overloaded, we can scale it vertically or horizontally. We also use connection pooling and query timeouts to prevent a single bad query from overwhelming the database.
+
+## Observability
+
+- **Metrics:** We track query latency, cache hit rate, and error rates.
+- **Logging:** We log all queries and their execution times.
+- **Tracing:** We use tracing to understand the performance of our queries and to identify bottlenecks.
+
+## Results
+
+- **Sub-500ms uncached queries**
+- **Sub-20ms cached responses**
+- **Cursor-based pagination**
+- **Async background jobs**
+- **Smart cache TTL/eviction**
+
+## Run locally in 60 seconds
+
+```bash
+docker-compose up -d
+./mvnw spring-boot:run
+```
+'''

@@ -1,0 +1,41 @@
+'''
+import { BlogPostLayout } from "@/components/BlogPostLayout";
+
+export const metadata = {
+  title: "Idempotency Keys: Stopping Double-Spends",
+  description: "An explanation of how idempotency keys work and why they are critical for building reliable APIs.",
+  date: "2026-01-13",
+};
+
+export default ({ children }) => <BlogPostLayout metadata={metadata}>{children}</BlogPostLayout>;
+
+## The Problem: Network Unreliability
+
+When a client makes an API request, it might fail for any number of reasons. The network might be down, the server might be overloaded, or a cosmic ray might flip a bit in a router. When a request fails, the client doesn't know if the server processed the request or not. So, what does it do? It retries the request.
+
+If the request was a `GET` request, retrying is safe. But if the request was a `POST` request that creates a resource or a `PATCH` request that updates a resource, retrying can be dangerous. If the server processed the original request but the client didn't receive the response, retrying the request could result in a duplicate resource being created or an update being applied twice.
+
+This is a particularly nasty problem in payment systems, where a duplicate request could result in a customer being charged twice.
+
+## The Solution: Idempotency Keys
+
+An idempotency key is a unique value that the client generates and includes in its request. The server stores the result of the request, using the idempotency key as the key. If the client retries the request with the same idempotency key, the server returns the stored result instead of processing the request again.
+
+This ensures that the request is processed at most once, even if the client retries it multiple times.
+
+## How It Works
+
+1.  **The client generates a unique idempotency key.** A common way to do this is to generate a UUID.
+2.  **The client includes the idempotency key in the request header.** A common header to use is `Idempotency-Key`.
+3.  **The server checks if it has seen this idempotency key before.** It does this by looking up the key in a cache (like Redis) or a database table.
+4.  **If the server has seen the key before, it returns the stored result.**
+5.  **If the server has not seen the key before, it processes the request and stores the result.** The result is stored using the idempotency key as the key.
+
+## Tradeoffs
+
+- **Increased Complexity:** You need to add logic to your server to handle idempotency keys. You also need a place to store the results of requests.
+- **Storage Costs:** Storing the results of requests can be expensive, especially if the responses are large. You need to have a strategy for cleaning up old results.
+- **Latency:** Checking for the existence of an idempotency key adds a small amount of latency to each request.
+
+Despite these tradeoffs, idempotency keys are a must-have for any API that handles state-changing requests.
+'''

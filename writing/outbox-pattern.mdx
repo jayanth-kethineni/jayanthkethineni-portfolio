@@ -1,0 +1,53 @@
+'''
+import { BlogPostLayout } from "@/components/BlogPostLayout";
+
+export const metadata = {
+  title: "Outbox Pattern: What It Prevents in Real Systems",
+  description: "A deep dive into the outbox pattern and how it prevents data inconsistencies in distributed systems.",
+  date: "2026-01-14",
+};
+
+export default ({ children }) => <BlogPostLayout metadata={metadata}>{children}</BlogPostLayout>;
+
+## The Problem: Dual Writes
+
+In many distributed systems, you need to update your own database and notify other services of the change. A common way to do this is to publish a message to a message broker like Kafka or RabbitMQ. The problem is that these two operations—writing to the database and publishing a message—cannot be done in a single atomic transaction.
+
+This leads to a classic race condition:
+
+1.  You write to the database, but your service crashes before you can publish the message.
+2.  You publish the message, but the database write fails.
+
+In either case, your system is now in an inconsistent state.
+
+## The Solution: The Outbox Pattern
+
+The outbox pattern solves this problem by using your database as a temporary message queue. Instead of publishing a message directly to the message broker, you write the message to a special "outbox" table in your database. This write is done in the same transaction as your other database writes, which guarantees that both operations either succeed or fail together.
+
+A separate process then reads the messages from the outbox table and publishes them to the message broker. This process can be a background thread in your service or a separate service altogether.
+
+## How It Works
+
+1.  **Begin a database transaction.**
+2.  **Update your business tables.**
+3.  **Write the message to the outbox table.**
+4.  **Commit the transaction.**
+
+Because both writes are part of the same transaction, you can be sure that the message will only be written to the outbox table if the business tables are successfully updated.
+
+## The Publisher
+
+The publisher is a separate process that reads messages from the outbox table and publishes them to the message broker. There are two common ways to implement the publisher:
+
+- **Polling:** The publisher periodically polls the outbox table for new messages.
+- **Change Data Capture (CDC):** The publisher uses a CDC tool like Debezium to stream changes from the outbox table to the message broker.
+
+## Tradeoffs
+
+The outbox pattern is not a free lunch. It has a few tradeoffs:
+
+- **Increased Latency:** Messages are not published to the message broker immediately. There is a delay while the publisher reads the message from the outbox table and publishes it.
+- **Increased Complexity:** The outbox pattern adds another moving part to your system. You need to implement and monitor the publisher process.
+
+Despite these tradeoffs, the outbox pattern is a powerful tool for building reliable and consistent distributed systems.
+'''

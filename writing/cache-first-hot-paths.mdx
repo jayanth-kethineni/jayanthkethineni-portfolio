@@ -1,0 +1,48 @@
+'''
+import { BlogPostLayout } from "@/components/BlogPostLayout";
+
+export const metadata = {
+  title: "Cache-First Hot Paths: Hitting p99 Latency Targets",
+  description: "How to use a cache-first hot path to meet aggressive latency SLOs for high-frequency reads.",
+  date: "2026-01-12",
+};
+
+export default ({ children }) => <BlogPostLayout metadata={metadata}>{children}</BlogPostLayout>;
+
+## The Problem: Slow Databases
+
+Databases are often the bottleneck in web applications. They are great for storing data and providing strong consistency guarantees, but they can be slow, especially for complex queries. When you have a high-frequency read path that needs to be fast, a database is often not the right tool for the job.
+
+For example, imagine you are building a social media site. Every time a user loads their feed, you need to fetch the latest posts from the people they follow. This is a read-heavy workload that needs to be fast. If you have to go to the database for every request, you will quickly run into performance problems.
+
+## The Solution: Cache-First Hot Path
+
+A cache-first hot path is a design pattern where you use a cache (like Redis) to serve high-frequency reads. The idea is to keep the most frequently accessed data in the cache, so you can serve it quickly without having to go to the database.
+
+When a request comes in, you first check the cache. If the data is in the cache, you return it immediately. If the data is not in the cache, you fetch it from the database, store it in the cache, and then return it.
+
+## How It Works
+
+1.  **A request comes in for a piece of data.**
+2.  **The application checks the cache for the data.**
+3.  **If the data is in the cache (a cache hit), it is returned to the client.**
+4.  **If the data is not in the cache (a cache miss), the application fetches the data from the database.**
+5.  **The application stores the data in the cache.**
+6.  **The data is returned to the client.**
+
+## Cache Invalidation
+
+The hardest part of caching is cache invalidation. When the data in the database changes, you need to update the cache. There are several ways to do this:
+
+- **Write-through caching:** When you write to the database, you also write to the cache.
+- **Write-around caching:** You write directly to the database and the cache is updated on the next read.
+- **Write-back caching:** You write to the cache and the cache writes to the database in the background.
+
+## Tradeoffs
+
+- **Stale Data:** The biggest tradeoff with caching is that you might serve stale data. If the data in the database changes but the cache is not updated, you will be serving old data.
+- **Increased Complexity:** Caching adds another layer of complexity to your system. You need to manage the cache and worry about cache invalidation.
+- **Increased Cost:** Caches are not free. You need to pay for the memory to store the cache.
+
+Despite these tradeoffs, a cache-first hot path is a powerful pattern for building high-performance, read-heavy applications.
+'''
